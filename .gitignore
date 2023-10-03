@@ -1,0 +1,12 @@
+storage
+log
+
+dagster_home/.telemetry
+dagster_home/logs
+
+.env
+dagster_home/.nux
+dagster_home/logs
+dagster_home/logs
+etl_pipeline/etl_pipeline/__pycache__
+storage/postgres_data

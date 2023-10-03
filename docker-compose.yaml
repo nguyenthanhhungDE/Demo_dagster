@@ -1,29 +1,26 @@
 version: "3.9"
 services:
   de_psql:
-    image: postgres:15
+    image: postgres:14-alpine
     container_name: de_psql
+    hostname: de_psql
     volumes:
-      - ./storage/postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./pg_hba.conf:/tmp/pg_hba.conf
       # - ./load_dataset:/tmp/load_dataset
     command: ["postgres", "-c", "hba_file=/tmp/pg_hba.conf"]
+    expose:
+      - "5432"
     ports:
-       - "5432:5432"
+      - "5432:5432"
     env_file: .env
     networks:
       - de_network
-    
-  # Dagster
-  de_dagster:
-    build:
-      context: ./dagster/
-      dockerfile: Dockerfile
-    container_name: de_dagster
-    image: de_dagster
 
   de_dagster_dagit:
-    image: de_dagster:latest
+    build:
+      context: ./dagster
+      dockerfile: Dockerfile
     entrypoint:
       - dagit
       - -h
@@ -32,15 +29,7 @@ services:
       - "3001"
       - -w
       - workspace.yaml
-      # - dagster
-      # - dev 
-      # - -h
-      # - "0.0.0.0"
-      # - -p 
-      # - "3001"
     container_name: de_dagster_dagit
-    expose:
-      - "3001"
     ports:
       - "3001:3001"
     volumes:
@@ -50,9 +39,13 @@ services:
       - .env
     networks:
       - de_network
+    depends_on:
+      - de_psql
 
   de_dagster_daemon:
-    image: de_dagster:latest
+    build:
+      context: ./dagster
+      dockerfile: Dockerfile
     entrypoint:
       - dagster-daemon
       - run
@@ -64,6 +57,8 @@ services:
       - .env
     networks:
       - de_network
+    depends_on:
+      - de_psql
 
   etl_pipeline:
     build:
@@ -77,8 +72,8 @@ services:
       # - ./etl_pipeline/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
     env_file:
       - .env
-    ports:
-      - "4000:4000"
+    expose:
+      - "4000"
     networks:
       - de_network
 
@@ -86,3 +81,6 @@ networks:
   de_network:
     driver: bridge
     name: de_network
+
+volumes:
+  postgres_data: {}
